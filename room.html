@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#eef2f7">
+<title>Tubzi Chat — Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+--accent:#FF7A00;
+--accent-soft:rgba(255,122,0,.14);
+--accent-strong:#e56e00;
+--ink:#0f172a;
+--ink-secondary:#334155;
+--muted:#64748b;
+--line:#e2e8f0;
+--surface:#f8fafc;
+--bubble-other:#ffffff;
+--bubble-me:#fff7ed;
+--safe-top:max(10px, env(safe-area-inset-top, 0px));
+--safe-bottom:max(10px, env(safe-area-inset-bottom, 0px));
+--phone-w:390px;
+--phone-max-h:844px;
+--radius-outer:28px;
+--shadow-device:0 28px 48px -22px rgba(15,23,42,.3);
+}
+*{margin:0;padding:0;box-sizing:border-box;
+font-family:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+-webkit-tap-highlight-color:transparent;
+}
+html,body{height:100%;}
+body{
+min-height:100dvh;
+background:
+radial-gradient(circle at 12% 12%, #ffedd5 0%, transparent 34%),
+radial-gradient(circle at 88% 85%, #ffedd5 0%, transparent 30%),
+#eef2f7;
+display:flex;
+flex-direction:column;
+align-items:center;
+padding:var(--safe-top) 16px var(--safe-bottom);
+color:var(--ink);
+}
+
+.shell{
+width:100%;
+max-width:var(--phone-w);
+flex:1;
+min-height:0;
+max-height:min(100dvh - var(--safe-top) - var(--safe-bottom), var(--phone-max-h));
+display:flex;
+flex-direction:column;
+margin:0 auto;
+}
+
+.device{
+flex:1;
+min-height:0;
+display:flex;
+flex-direction:column;
+background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+border-radius:var(--radius-outer);
+padding:14px 14px 16px;
+box-shadow:var(--shadow-device);
+border:1px solid #ffedd5;
+}
+
+.topbar{
+flex-shrink:0;
+display:flex;
+align-items:flex-start;
+gap:10px;
+padding:4px 2px 14px;
+border-bottom:1px solid #ffedd5;
+margin-bottom:10px;
+}
+
+.back{
+border:none;
+background:var(--surface);
+color:var(--ink-secondary);
+font-weight:600;
+font-size:13px;
+padding:10px 14px;
+border-radius:10px;
+border:1px solid var(--line);
+cursor:pointer;
+transition:background .15s ease, border-color .15s ease;
+}
+.back:hover{background:#fff;border-color:#fdba74;}
+.back:active{opacity:.92;}
+
+.room-meta{
+flex:1;
+min-width:0;
+padding-top:2px;
+}
+.room-code-label{
+font-size:11px;
+font-weight:600;
+letter-spacing:.1em;
+text-transform:uppercase;
+color:var(--muted);
+min-height:12px;
+}
+.code-value{
+font-family:"IBM Plex Mono","SF Mono",ui-monospace,monospace;
+font-size:18px;
+font-weight:600;
+letter-spacing:.04em;
+color:var(--ink);
+margin-top:4px;
+text-shadow:0 1px 0 rgba(255,255,255,.9);
+}
+.you-line{
+font-size:13px;
+color:var(--ink-secondary);
+margin-top:6px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
+.you-line strong{font-weight:600;color:var(--ink);}
+
+.chat-panel{
+flex:1;
+min-height:0;
+background:linear-gradient(180deg,#f8fbff 0%,#f6f9ff 100%);
+border-radius:18px;
+border:1px solid #ffedd5;
+display:flex;
+flex-direction:column;
+overflow:hidden;
+box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+.banner{
+flex-shrink:0;
+font-size:12px;
+font-weight:500;
+color:#334155;
+text-align:center;
+padding:10px 14px;
+line-height:1.45;
+background:linear-gradient(180deg,#fff1e8 0%,#fff8f3 100%);
+border-bottom:1px solid #ffedd5;
+min-height:18px;
+}
+
+.messages{
+flex:1;
+min-height:0;
+overflow-y:auto;
+padding:12px 12px 14px;
+display:flex;
+flex-direction:column;
+gap:12px;
+}
+
+.msg{
+max-width:86%;
+padding:11px 14px;
+border-radius:14px;
+font-size:15px;
+line-height:1.45;
+word-wrap:break-word;
+box-shadow:0 8px 18px -16px rgba(15,23,42,.35);
+}
+.msg .who{
+font-size:11px;
+font-weight:600;
+color:var(--muted);
+margin-bottom:5px;
+letter-spacing:.01em;
+}
+.msg.me{
+align-self:flex-end;
+background:var(--bubble-me);
+border:1px solid #fdba74;
+}
+.msg.them{
+align-self:flex-start;
+background:var(--bubble-other);
+border:1px solid var(--line);
+}
+
+.time{
+font-size:11px;
+font-weight:500;
+color:#94a3b8;
+margin-top:8px;
+}
+
+.composer{
+flex-shrink:0;
+display:flex;
+gap:8px;
+align-items:flex-end;
+padding:10px 10px 6px;
+background:linear-gradient(180deg,transparent,rgba(255,241,232,.98) 45%);
+border-top:1px solid #ffedd5;
+}
+
+.composer input{
+flex:1;
+min-width:0;
+padding:12px 14px;
+font-size:16px;
+border-radius:12px;
+border:1px solid var(--line);
+background:#fff;
+outline:none;
+transition:border-color .15s ease, box-shadow .15s ease;
+}
+.composer input:focus{
+border-color:var(--accent);
+box-shadow:0 0 0 3px var(--accent-soft);
+}
+
+.send{
+flex-shrink:0;
+border:none;
+background:linear-gradient(135deg,var(--accent) 0%,var(--accent-strong) 100%);
+color:#fff;
+font-weight:600;
+font-size:14px;
+padding:12px 18px;
+border-radius:12px;
+cursor:pointer;
+box-shadow:0 10px 20px -14px rgba(234,88,12,.7);
+transition:opacity .15s ease, transform .12s ease;
+}
+.send:active{transform:scale(.98);}
+.send:disabled{
+opacity:.45;
+cursor:not-allowed;
+box-shadow:none;
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+<div class="device">
+<div class="topbar">
+<button type="button" class="back" id="leaveBtn" aria-label="Leave room">Leave</button>
+<div class="room-meta">
+<div class="room-code-label">Room</div>
+<div class="code-value" id="roomLabel">—</div>
+<div class="you-line">Signed in as <strong id="userLabel">—</strong></div>
+</div>
+</div>
+
+<div class="chat-panel">
+<p class="banner" id="syncNote"></p>
+<div class="messages" id="messages" aria-live="polite"></div>
+<form class="composer" id="chatForm" autocomplete="off">
+<label for="msgInput" class="visually-hidden" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Message</label>
+<input type="text" id="msgInput" maxlength="500" placeholder="Write a message…" enterkeyhint="send">
+<button type="submit" class="send" id="sendBtn">Send</button>
+</form>
+</div>
+</div>
+</div>
+
+<script>
+(function(){
+const HOME="preview%20(2).html";
+const user=(localStorage.getItem("tubzi_username")||"").trim();
+const code=(localStorage.getItem("tubzi_roomCode")||"").trim().toUpperCase();
+if(!user||!code){
+location.replace(HOME);
+return;
+}
+
+document.getElementById("userLabel").textContent=user;
+document.getElementById("roomLabel").textContent=code;
+
+function storageKey(){return"tubzi_room_msgs_"+code;}
+function readMessages(){
+try{
+const raw=localStorage.getItem(storageKey());
+const arr=raw?JSON.parse(raw):[];
+return Array.isArray(arr)?arr:[];
+}catch(_){return[];}
+}
+function writeMessages(list){
+localStorage.setItem(storageKey(),JSON.stringify(list.slice(-200)));
+}
+
+function escapeHtml(s){
+return String(s)
+.replace(/&/g,"&amp;")
+.replace(/</g,"&lt;")
+.replace(/>/g,"&gt;")
+.replace(/"/g,"&quot;");
+}
+
+function formatTime(ts){
+try{
+const d=new Date(ts);
+return d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+}catch(_){return"";}
+}
+
+function render(){
+const list=readMessages();
+const el=document.getElementById("messages");
+el.innerHTML=list.map(m=>{
+const mine=m.user===user;
+const cls=mine?"msg me":"msg them";
+const who=mine?"":`<div class="who">${escapeHtml(m.user)}</div>`;
+return`<div class="${cls}">${who}<div>${escapeHtml(m.text)}</div><div class="time">${formatTime(m.ts)}</div></div>`;
+}).join("");
+el.scrollTop=el.scrollHeight;
+}
+
+function appendMessage(text){
+const list=readMessages();
+list.push({id:String(Date.now())+Math.random().toString(16).slice(2),user:user,text:text.trim(),ts:Date.now()});
+writeMessages(list);
+render();
+}
+
+document.getElementById("leaveBtn").addEventListener("click",function(){
+localStorage.removeItem("tubzi_username");
+localStorage.removeItem("tubzi_roomCode");
+location.href=HOME;
+});
+
+document.getElementById("chatForm").addEventListener("submit",function(e){
+e.preventDefault();
+const input=document.getElementById("msgInput");
+const v=input.value.trim();
+if(!v)return;
+input.value="";
+appendMessage(v);
+input.focus();
+});
+
+window.addEventListener("storage",function(ev){
+if(ev.key===storageKey())render();
+});
+
+render();
+document.getElementById("msgInput").focus();
+})();
+</script>
+</body>
+</html>

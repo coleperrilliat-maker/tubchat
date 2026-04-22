@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#eef2f7">
+<title>Tubzi Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+--accent:#FF7A00;
+--accent-soft:rgba(255,122,0,.14);
+--accent-strong:#e56e00;
+--ink:#0f172a;
+--ink-secondary:#334155;
+--muted:#64748b;
+--line:#e2e8f0;
+--surface:#f8fafc;
+--card:#ffffff;
+--surface-tint:#fff7ed;
+--safe-top:max(12px, env(safe-area-inset-top, 0px));
+--safe-bottom:max(12px, env(safe-area-inset-bottom, 0px));
+--phone-w:390px;
+--phone-max-h:844px;
+--radius-outer:28px;
+--radius-inner:18px;
+--shadow-device:0 28px 48px -22px rgba(15,23,42,.3);
+--shadow-card:0 1px 2px rgba(15,23,42,.08), 0 20px 36px -30px rgba(234,88,12,.35);
+}
+*{margin:0;padding:0;box-sizing:border-box;
+font-family:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+-webkit-tap-highlight-color:transparent;
+}
+html,body{height:100%;}
+body{
+min-height:100dvh;
+background:
+radial-gradient(circle at 10% 10%, #ffedd5 0%, transparent 35%),
+radial-gradient(circle at 90% 85%, #ffedd5 0%, transparent 30%),
+#eef2f7;
+color:var(--ink);
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:flex-start;
+padding:var(--safe-top) 16px var(--safe-bottom);
+}
+
+.shell{
+width:100%;
+max-width:var(--phone-w);
+flex:1;
+min-height:0;
+display:flex;
+flex-direction:column;
+max-height:min(100dvh - var(--safe-top) - var(--safe-bottom), var(--phone-max-h));
+margin:0 auto;
+}
+
+.device{
+flex:1;
+min-height:0;
+display:flex;
+flex-direction:column;
+background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+border-radius:var(--radius-outer);
+padding:16px 16px 20px;
+box-shadow:var(--shadow-device);
+border:1px solid #ffedd5;
+}
+
+.notch-spacer{
+height:6px;
+flex-shrink:0;
+}
+
+.inner{
+flex:1;
+min-height:0;
+display:flex;
+flex-direction:column;
+overflow:hidden;
+}
+
+.card{
+background:var(--card);
+border-radius:22px;
+padding:24px 20px 20px;
+border:1px solid var(--line);
+box-shadow:var(--shadow-card);
+flex:1;
+min-height:0;
+display:flex;
+flex-direction:column;
+}
+
+.hero{
+flex-shrink:0;
+padding-bottom:20px;
+border-bottom:1px solid var(--line);
+margin-bottom:4px;
+}
+
+.brand-text{
+min-width:0;
+}
+.logo{
+font-size:24px;
+font-weight:700;
+letter-spacing:-0.02em;
+color:var(--ink);
+line-height:1.2;
+}
+.logo span{
+color:var(--accent-strong);
+font-weight:700;
+}
+
+.tagline{
+font-size:12px;
+font-weight:500;
+letter-spacing:.1em;
+text-transform:uppercase;
+color:var(--muted);
+margin-top:6px;
+}
+
+.sub{
+font-size:14px;
+font-weight:400;
+color:var(--ink-secondary);
+margin-top:14px;
+line-height:1.55;
+max-width:300px;
+}
+
+.stack{
+flex:1;
+min-height:0;
+display:flex;
+flex-direction:column;
+gap:16px;
+justify-content:flex-end;
+padding-top:20px;
+}
+
+label{
+display:block;
+font-size:12px;
+font-weight:600;
+letter-spacing:.02em;
+margin-bottom:8px;
+color:var(--ink-secondary);
+}
+
+input{
+width:100%;
+padding:14px 16px;
+font-size:16px;
+border-radius:12px;
+border:1px solid var(--line);
+background:linear-gradient(180deg,#fbfdff 0%,var(--surface) 100%);
+outline:none;
+color:var(--ink);
+transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+input:hover{border-color:#cbd5e1;}
+input:focus{
+border-color:var(--accent);
+background:#fff;
+box-shadow:0 0 0 3px var(--accent-soft);
+}
+
+input::placeholder{color:#94a3b8;}
+
+.actions{
+display:flex;
+flex-direction:column;
+gap:10px;
+margin-top:2px;
+}
+
+button{
+width:100%;
+padding:14px 16px;
+border:none;
+border-radius:12px;
+font-size:15px;
+font-weight:600;
+cursor:pointer;
+letter-spacing:-0.01em;
+transition:transform .12s ease, opacity .12s ease, box-shadow .12s ease;
+}
+
+button:active{transform:scale(.985);}
+
+.join{
+background:linear-gradient(135deg,var(--accent) 0%,var(--accent-strong) 100%);
+color:#fff;
+box-shadow:0 8px 18px -10px rgba(234,88,12,.72);
+}
+.join:hover{box-shadow:0 12px 24px -12px rgba(234,88,12,.72);}
+
+.create{
+background:#fff;
+color:var(--ink);
+border:1px solid var(--line);
+box-shadow:0 1px 2px rgba(15,23,42,.04);
+}
+.create:hover{border-color:#fdba74;background:#fffaf5;}
+
+.back{
+background:var(--surface);
+color:var(--ink-secondary);
+border:1px solid var(--line);
+}
+
+.section{display:none;animation:fade .24s ease;flex:1;min-height:0;flex-direction:column;}
+.section.active{display:flex;}
+
+@keyframes fade{
+from{opacity:0;transform:translateY(8px);}
+to{opacity:1;transform:translateY(0);}
+}
+
+.footer{
+text-align:center;
+font-size:11px;
+font-weight:500;
+letter-spacing:.06em;
+text-transform:uppercase;
+color:var(--muted);
+margin-top:auto;
+padding-top:20px;
+flex-shrink:0;
+position:relative;
+}
+.footer::before{
+content:"";
+display:block;
+width:38px;
+height:3px;
+border-radius:999px;
+background:#fed7aa;
+margin:0 auto 10px;
+}
+
+.hint{
+font-size:12px;
+color:var(--muted);
+text-align:center;
+margin-top:4px;
+line-height:1.5;
+padding:0 4px;
+}
+
+.text-link{
+border:none;
+background:transparent;
+padding:0;
+margin-top:2px;
+font-size:12px;
+font-weight:600;
+text-decoration:underline;
+color:var(--muted);
+cursor:pointer;
+align-self:center;
+}
+.text-link:hover{color:var(--accent-strong);}
+
+</style>
+</head>
+<body>
+
+<div class="shell">
+<div class="device">
+<div class="notch-spacer"></div>
+<div class="inner">
+<div class="card">
+
+<div id="homeSection" class="section active">
+<div class="hero">
+<div class="brand-text">
+<div class="logo">Tubzi <span>Chat</span></div>
+<div class="tagline">Private room messaging</div>
+</div>
+<div class="sub">Enter your room code.</div>
+</div>
+<div class="stack">
+<div>
+<label for="roomCodeHome">Room code</label>
+<input type="text" id="roomCodeHome" maxlength="16" autocomplete="off" placeholder="e.g. PLAY482" autocapitalize="characters">
+</div>
+<div class="actions">
+<button type="button" class="join" onclick="validateAndAskName()">Join room</button>
+</div>
+<button type="button" class="text-link" onclick="startCreateFlow()">create your own room</button>
+<div class="footer">tubzi.io</div>
+</div>
+</div>
+
+<div id="joinSection" class="section">
+<div class="hero">
+<div class="brand-text">
+<div class="logo" id="nameTitle">Join <span>room</span></div>
+<div class="tagline">Your name</div>
+</div>
+<div class="sub" id="nameSub">Enter your display name.</div>
+</div>
+<div class="stack">
+<div>
+<label for="usernameInput">Display name</label>
+<input type="text" id="usernameInput" maxlength="24" autocomplete="nickname" placeholder="How you appear in the room">
+</div>
+<div class="actions">
+<button type="button" class="join" onclick="completeRoomEntry()">Continue</button>
+<button type="button" class="back" onclick="goBack()">Back</button>
+</div>
+<div class="footer">tubzi.io</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+<script>
+const roomWords=[
+"PLAY","CHAT","ROOM","ZONE","GAME",
+"JOIN","CLUB","LIVE","WAVE","TEAM",
+"VIBE","LINK","SPOT","HANG","TALK"
+];
+
+function generateRoomCode(){
+const word=roomWords[Math.floor(Math.random()*roomWords.length)];
+const num=Math.floor(100+Math.random()*900);
+return word+num;
+}
+
+let pendingRoomCode="";
+let pendingMode="join";
+
+function isValidRoomCode(code){
+return /^[A-Z]{4}\d{3}$/.test(code);
+}
+
+function showNameStep(title,subtitle){
+document.getElementById("nameTitle").innerHTML=title;
+document.getElementById("nameSub").textContent=subtitle;
+document.getElementById("homeSection").classList.remove("active");
+document.getElementById("joinSection").classList.add("active");
+document.getElementById("usernameInput").focus();
+}
+
+function validateAndAskName(){
+const code=document.getElementById("roomCodeHome").value.trim().toUpperCase().replace(/\s+/g,"");
+if(!isValidRoomCode(code)){
+alert("Enter a valid room code (4 letters + 3 numbers).");
+return;
+}
+pendingMode="join";
+pendingRoomCode=code;
+showNameStep("Join <span>room</span>","Enter your display name.");
+}
+
+function startCreateFlow(){
+pendingMode="create";
+pendingRoomCode=generateRoomCode();
+showNameStep("Create <span>room</span>","Your new room: "+pendingRoomCode);
+}
+
+function goBack(){
+document.getElementById("joinSection").classList.remove("active");
+document.getElementById("homeSection").classList.add("active");
+}
+
+function goRoom(username,roomCode){
+localStorage.setItem("tubzi_username",username);
+localStorage.setItem("tubzi_roomCode",roomCode);
+window.location.href="room.html";
+}
+
+function completeRoomEntry(){
+const username=document.getElementById("usernameInput").value.trim();
+if(!username){
+alert("Enter a display name to continue.");
+return;
+}
+if(!pendingRoomCode){
+alert("Choose a room first.");
+return;
+}
+goRoom(username,pendingRoomCode);
+}
+</script>
+</body>
+</html>
