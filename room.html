@@ -266,11 +266,13 @@ box-shadow:none;
 </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
 const HOME="preview%20(2).html";
 const user=(localStorage.getItem("tubzi_username")||"").trim();
 const code=(localStorage.getItem("tubzi_roomCode")||"").trim().toUpperCase();
+let roomId=(localStorage.getItem("tubzi_roomId")||"").trim();
 if(!user||!code){
 location.replace(HOME);
 return;
@@ -279,7 +281,14 @@ return;
 document.getElementById("userLabel").textContent=user;
 document.getElementById("roomLabel").textContent=code;
 
-function storageKey(){return"tubzi_room_msgs_"+code;}
+const SUPABASE_URL="https://gvvowenjfiiruyzncigb.supabase.co";
+const SUPABASE_KEY="sb_publishable_noeSDPOFwrIUXBpBiisrQg_tHtnN8aR";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+realtime:{params:{eventsPerSecond:10}}
+});
+let roomSub=null;
+
+function storageKey(){return"tubzi_room_msgs_"+(roomId||code);}
 function readMessages(){
 try{
 const raw=localStorage.getItem(storageKey());
@@ -289,6 +298,15 @@ return Array.isArray(arr)?arr:[];
 }
 function writeMessages(list){
 localStorage.setItem(storageKey(),JSON.stringify(list.slice(-200)));
+}
+
+function mapRow(row){
+return{
+id:row.id||String(Date.now())+Math.random().toString(16).slice(2),
+user:row.username||row.user||"user",
+text:row.content||row.text||"",
+ts:row.created_at?new Date(row.created_at).getTime():(row.ts||Date.now())
+};
 }
 
 function escapeHtml(s){
@@ -306,8 +324,7 @@ return d.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
 }catch(_){return"";}
 }
 
-function render(){
-const list=readMessages();
+function render(list){
 const el=document.getElementById("messages");
 el.innerHTML=list.map(m=>{
 const mine=m.user===user;
@@ -318,35 +335,127 @@ return`<div class="${cls}">${who}<div>${escapeHtml(m.text)}</div><div class="tim
 el.scrollTop=el.scrollHeight;
 }
 
-function appendMessage(text){
+function appendLocalMessage(text){
 const list=readMessages();
 list.push({id:String(Date.now())+Math.random().toString(16).slice(2),user:user,text:text.trim(),ts:Date.now()});
 writeMessages(list);
-render();
+render(list);
+}
+
+async function ensureAuth(){
+const sess=await sb.auth.getSession();
+if(sess.data.session)return;
+await sb.auth.signInAnonymously();
+}
+
+function mapError(message){
+const m=String(message||"");
+if(m.includes("rate_limited"))return"Slow down a bit.";
+if(m.includes("message_too_long"))return"Message too long (500 max).";
+if(m.includes("room_not_found"))return"Room not found.";
+if(m.includes("room_full"))return"Room is full (25 max).";
+return m||"Something went wrong.";
+}
+
+async function resolveRoomId(){
+if(roomId)return roomId;
+const joined=await sb.rpc("join_room",{p_code:code,p_username:user});
+if(joined.error)throw joined.error;
+if(Array.isArray(joined.data)&&joined.data[0]&&joined.data[0].room_id){
+roomId=String(joined.data[0].room_id);
+}else if(joined.data&&joined.data.room_id){
+roomId=String(joined.data.room_id);
+}else if(typeof joined.data==="string"){
+roomId=joined.data;
+}
+if(!roomId)throw new Error("Unable to resolve room.");
+localStorage.setItem("tubzi_roomId",roomId);
+return roomId;
+}
+
+async function loadHistory(){
+const res=await sb.from("messages")
+.select("id,username,content,created_at")
+.eq("room_id",roomId)
+.order("created_at",{ascending:true})
+.limit(200);
+if(res.error)throw res.error;
+const mapped=(res.data||[]).map(mapRow);
+writeMessages(mapped);
+render(mapped);
+}
+
+function subscribeMessages(){
+if(roomSub)sb.removeChannel(roomSub);
+roomSub=sb.channel("msgs-"+roomId)
+.on("postgres_changes",{
+event:"INSERT",
+schema:"public",
+table:"messages",
+filter:"room_id=eq."+roomId
+},function(payload){
+const incoming=mapRow(payload.new||{});
+const current=readMessages();
+if(current.some(m=>String(m.id)===String(incoming.id)))return;
+current.push(incoming);
+writeMessages(current);
+render(current);
+})
+.subscribe();
+}
+
+async function sendMessage(text){
+if(!navigator.onLine){
+appendLocalMessage(text);
+return;
+}
+const out=await sb.rpc("send_message",{p_room:roomId,p_content:text});
+if(out.error)throw out.error;
 }
 
 document.getElementById("leaveBtn").addEventListener("click",function(){
 localStorage.removeItem("tubzi_username");
 localStorage.removeItem("tubzi_roomCode");
+localStorage.removeItem("tubzi_roomId");
+if(roomId){
+sb.rpc("leave_room",{p_room:roomId});
+}
+if(roomSub)sb.removeChannel(roomSub);
 location.href=HOME;
 });
 
-document.getElementById("chatForm").addEventListener("submit",function(e){
+document.getElementById("chatForm").addEventListener("submit",async function(e){
 e.preventDefault();
 const input=document.getElementById("msgInput");
 const v=input.value.trim();
 if(!v)return;
 input.value="";
-appendMessage(v);
+try{
+await sendMessage(v);
+}catch(err){
+alert(mapError(err&&err.message));
+appendLocalMessage(v);
+}
 input.focus();
 });
 
-window.addEventListener("storage",function(ev){
-if(ev.key===storageKey())render();
+window.addEventListener("online",function(){
+loadHistory().catch(function(){});
 });
 
-render();
+(async function boot(){
+try{
+await ensureAuth();
+await resolveRoomId();
+render(readMessages());
+await loadHistory();
+subscribeMessages();
 document.getElementById("msgInput").focus();
+}catch(err){
+alert(mapError(err&&err.message));
+location.replace(HOME);
+}
+})();
 })();
 </script>
 </body>

@@ -270,6 +270,14 @@ align-self:center;
 }
 .text-link:hover{color:var(--accent-strong);}
 
+.field-error{
+min-height:18px;
+margin-top:8px;
+font-size:12px;
+font-weight:600;
+color:#dc2626;
+}
+
 </style>
 </head>
 <body>
@@ -292,6 +300,7 @@ align-self:center;
 <div>
 <label for="roomCodeHome">Room code</label>
 <input type="text" id="roomCodeHome" maxlength="16" autocomplete="off" placeholder="e.g. PLAY482" autocapitalize="characters">
+<p class="field-error" id="roomCodeError" aria-live="polite"></p>
 </div>
 <div class="actions">
 <button type="button" class="join" onclick="validateAndAskName()">Join room</button>
@@ -327,12 +336,19 @@ align-self:center;
 </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const roomWords=[
 "PLAY","CHAT","ROOM","ZONE","GAME",
 "JOIN","CLUB","LIVE","WAVE","TEAM",
 "VIBE","LINK","SPOT","HANG","TALK"
 ];
+
+const SUPABASE_URL="https://gvvowenjfiiruyzncigb.supabase.co";
+const SUPABASE_KEY="sb_publishable_noeSDPOFwrIUXBpBiisrQg_tHtnN8aR";
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+realtime:{params:{eventsPerSecond:10}}
+});
 
 function generateRoomCode(){
 const word=roomWords[Math.floor(Math.random()*roomWords.length)];
@@ -356,9 +372,11 @@ document.getElementById("usernameInput").focus();
 }
 
 function validateAndAskName(){
+const errEl=document.getElementById("roomCodeError");
+errEl.textContent="";
 const code=document.getElementById("roomCodeHome").value.trim().toUpperCase().replace(/\s+/g,"");
 if(!isValidRoomCode(code)){
-alert("Enter a valid room code (4 letters + 3 numbers).");
+errEl.textContent="Sorry, invalid room code.";
 return;
 }
 pendingMode="join";
@@ -380,10 +398,30 @@ document.getElementById("homeSection").classList.add("active");
 function goRoom(username,roomCode){
 localStorage.setItem("tubzi_username",username);
 localStorage.setItem("tubzi_roomCode",roomCode);
+localStorage.setItem("tubzi_roomId",roomId);
 window.location.href="room.html";
 }
 
-function completeRoomEntry(){
+function mapError(message){
+const m=String(message||"");
+if(m.includes("room_not_found"))return"That room code does not exist.";
+if(m.includes("room_full"))return"Room is full (25 max).";
+if(m.includes("invalid_username"))return"Pick a username (1-24 chars).";
+return m||"Something went wrong. Please try again.";
+}
+
+async function ensureAuth(){
+const sess=await sb.auth.getSession();
+if(sess.data.session)return;
+await sb.auth.signInAnonymously();
+}
+
+function extractPayload(data){
+if(Array.isArray(data))return data[0]||null;
+return data||null;
+}
+
+async function completeRoomEntry(){
 const username=document.getElementById("usernameInput").value.trim();
 if(!username){
 alert("Enter a display name to continue.");
@@ -393,7 +431,34 @@ if(!pendingRoomCode){
 alert("Choose a room first.");
 return;
 }
-goRoom(username,pendingRoomCode);
+try{
+await ensureAuth();
+let roomCode=pendingRoomCode;
+let roomId="";
+
+if(pendingMode==="create"){
+const out=await sb.rpc("create_room",{p_username:username});
+if(out.error)throw out.error;
+const payload=extractPayload(out.data);
+if(!payload||!payload.room_id||!payload.room_code)throw new Error("Could not create room.");
+roomCode=String(payload.room_code).toUpperCase();
+roomId=String(payload.room_id);
+}else{
+const out=await sb.rpc("join_room",{p_code:pendingRoomCode,p_username:username});
+if(out.error)throw out.error;
+const payload=extractPayload(out.data);
+if(payload&&typeof payload==="object"&&payload.room_id){
+roomId=String(payload.room_id);
+}else if(payload&&typeof payload==="string"){
+roomId=payload;
+}
+if(!roomId)throw new Error("Unable to join room.");
+}
+
+goRoom(username,roomCode,roomId);
+}catch(err){
+alert(mapError(err&&err.message));
+}
 }
 </script>
 </body>
